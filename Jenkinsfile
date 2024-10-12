@@ -1,7 +1,7 @@
 pipeline{
 
     parameters {
-    choice choices: ['cloud_unit', 'cloud_intg', 'cloud_accp', 'cloud_prod'], description: 'select the Branch Name', name: 'BranchName'
+    choice choices: ['main', 'cloud_unit', 'cloud_intg', 'cloud_accp', 'cloud_prod'], description: 'select the Branch Name', name: 'BranchName'
     string defaultValue: 'Harikrishna Annam', name: 'PersonName'
     }
     agent any
