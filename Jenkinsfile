@@ -1,49 +1,46 @@
 pipeline{
 
-parameters {
-  choice choices: ['cloud_unit', 'cloud_intg', 'cloud_accp', 'cloud_prod'], description: 'select the Branch Name', name: 'BranchName'
-  string defaultValue: 'Harikrishna Annam', name: 'PersonName'
-}
+    parameters {
+    choice choices: ['cloud_unit', 'cloud_intg', 'cloud_accp', 'cloud_prod'], description: 'select the Branch Name', name: 'BranchName'
+    string defaultValue: 'Harikrishna Annam', name: 'PersonName'
+    }
+    agent any
 
-agent any
-
-tools{
-maven 'Maven'
-}
-
-options {
-  buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '50')
-  timestamps()
-}
-
+    tools{
+    maven 'Maven'
+    }
+    options {
+    buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '50')
+    timestamps()
+    }
 stages{
    stage('CheckoutCode'){
    steps{
-   git branch: "${params.BranchName}", credentialsId: '960a1bf2-9705-4205-8804-a856f4ad3acd', url: 'https://github.com/voyafinance/wis-apache-external.git'
+   git branch: 'main', credentialsId: 'c1284e84-c8a1-4766-a110-fef588969026', url: 'https://github.com/i718679/pweb.git'
    }
    }
-    stage('Build'){
+    stage('Build Package'){
 	steps{
 	sh "mvn clean package"
 	}
 	}
-	stage('SonarQubeReport'){
+	stage('Build Docker Image'){
 	steps{
-	sh "mvn clean sonar:sonar"
-	}
-	}
-	stage('UploadArtifacts'){
+    sh "docker build -t dockervirtual/mavenwebapp ."
+    }
+    }
+	stage('DockerImage Push'){
 	steps{
-	sh "mvn clean deploy"
-	}
-	}
-	stage('Deploy Application'){
+     withCredentials([string(credentialsId: 'Docker hub credentials', variable: 'DOCKER_HUB_CREDENTIALS1')]) {
+     sh "docker login -u dockervirtual -p ${DOCKER_HUB_CREDENTIALS1}"
+     }
+    sh "docker push dockervirtual/mavenwebapp"
+    }
+    }
+	stage('Deploy to Kubernetes Cluster'){
 	steps{
-	sshagent(['3e7930c7-63f6-4994-a84a-aae18745aecf']) {
-    sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@172.31.0.183:/opt/apache-tomcat-9.0.95/webapps/"
+    sh "kubectl apply -f mavenwebappdeployment.yaml"
+    }
 	}
-	}
-	}
-	
-}//stages closing
-}//pipeline closing
+}
+}
